@@ -8,4 +8,6 @@ python 官方文档 -> pandas -> numpy -> kernels/discussion -> (visualization->
 - ```modeltraining.py``` 模型训练和参数选择；
 - ```visualization.ipynb``` 各种辅助 EDA 的可视化代码，参考自 kagglers 的分享；(待上传）  
 ## Links
-[IEEE-CIS-Fraud-Detection](https://www.kaggle.com/c/ieee-fraud-detection)  
+[IEEE-CIS-Fraud-Detection](https://www.kaggle.com/c/ieee-fraud-detection)   
+[pandas](https://pandas.pydata.org/pandas-docs/stable/index.html)  
+[numpy](https://docs.scipy.org/doc/numpy/user/quickstart.html)  
