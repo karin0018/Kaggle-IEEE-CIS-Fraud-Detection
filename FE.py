@@ -149,3 +149,91 @@ for feature in ['id_01', 'id_31', 'id_33', 'id_35', 'id_36']:
         train[feature + '_count_dist'] = train[feature].map(train[feature].value_counts(dropna=False)) 
         test[feature + '_count_dist'] = test[feature].map(test[feature].value_counts(dropna=False))
 
+        
+
+
+# In[ ]:
+
+
+train['TransactionAmt_Log'] = np.log(train['TransactionAmt'])
+test['TransactionAmt_Log'] = np.log(test['TransactionAmt'])
+
+# PCA for Vxx
+from sklearn.preprocessing import minmax_scale
+from sklearn.decomposition import PCA
+
+# from sklearn.cluster import KMeans
+mas_v = train.columns[55:394]
+def PCA_change(df, cols, n_components, prefix='PCA_', rand_seed=4):
+    pca = PCA(n_components=n_components, random_state=rand_seed)
+
+    principalComponents = pca.fit_transform(df[cols])
+
+    principalDf = pd.DataFrame(principalComponents)
+
+    df.drop(cols, axis=1, inplace=True)
+
+    principalDf.rename(columns=lambda x: str(prefix) + str(x), inplace=True)
+
+    df = pd.concat([df, principalDf], axis=1)
+
+    return df
+
+for col in mas_v:
+    train[col] = train[col].fillna((train[col].min() - 2))
+    train[col] = (minmax_scale(train[col], feature_range=(0, 1)))
+    test[col] = test[col].fillna((test[col].min() - 2))
+    test[col] = (minmax_scale(test[col], feature_range=(0, 1)))
+
+train = PCA_change(train, mas_v, prefix='PCA_V_', n_components=30)
+test =  PCA_change(test, mas_v, prefix='PCA_V_', n_components=30)
+
+
+
+
+# delete some unnecessary columns
+one_value_cols = [col for col in train.columns if train[col].nunique() <= 1]
+one_value_cols_test = [col for col in test.columns if test[col].nunique() <= 1]
+many_null_cols = [col for col in train.columns if train[col].isnull().sum() / train.shape[0] > 0.9]
+many_null_cols_test = [col for col in test.columns if test[col].isnull().sum() / test.shape[0] > 0.9]
+big_top_value_cols = [col for col in train.columns if train[col].value_counts(dropna=False, normalize=True).values[0] > 0.9]
+big_top_value_cols_test = [col for col in test.columns if test[col].value_counts(dropna=False, normalize=True).values[0] > 0.9]
+cols_to_drop = list(set(many_null_cols + many_null_cols_test + big_top_value_cols + big_top_value_cols_test + one_value_cols+ one_value_cols_test))
+cols_to_drop.remove('isFraud')
+len(cols_to_drop)
+train = train.drop(cols_to_drop, axis=1)
+test = test.drop(cols_to_drop, axis=1)
+
+
+cat_cols = ['id_12', 'id_13', 'id_14', 'id_15', 'id_16', 'id_17', 'id_18', 'id_19', 'id_20', 'id_21', 'id_22', 'id_23', 'id_24', 'id_25', 'id_26', 'id_27', 'id_28', 'id_29',
+            'id_30', 'id_31', 'id_32', 'id_33', 'id_34', 'id_35', 'id_36', 'id_37', 'id_38', 'DeviceType', 'DeviceInfo', 'ProductCD', 'card4', 'card6', 'M4','P_emaildomain',
+            'R_emaildomain', 'card1', 'card2', 'card3',  'card5', 'addr1', 'addr2', 'M1', 'M2', 'M3', 'M5', 'M6', 'M7', 'M8', 'M9',
+            'P_emaildomain_1', 'P_emaildomain_2', 'P_emaildomain_3', 'R_emaildomain_1', 'R_emaildomain_2', 'R_emaildomain_3']
+
+# encoding
+for col in cat_cols:
+    if col in train.columns:
+        le = LabelEncoder()
+        le.fit(list(train[col].astype(str).values) + list(test[col].astype(str).values))
+        train[col] = le.transform(list(train[col].astype(str).values))
+        test[col] = le.transform(list(test[col].astype(str).values))
+
+# inf
+def clean_inf_nan(df):
+    return df.replace([np.inf, -np.inf], np.nan)
+
+# Cleaning infinite values to NaN
+train=clean_inf_nan(train)
+test=clean_inf_nan(test)
+
+# NaN
+train[train.columns].fillna(-999,inplace = True)
+test[test.columns].fillna(-999,inplace = True)
+
+# divide dataset
+y = train.isFraud
+# feature_cols should contain "TransactionID"?    I think yes. but it shouldn't be.
+feature_cols = [c for c in train.columns if c not in ['isFraud','TransactionID']]
+X = train[feature_cols]
+X_test=test
+
