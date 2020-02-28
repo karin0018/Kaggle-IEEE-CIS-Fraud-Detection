@@ -230,10 +230,6 @@ test=clean_inf_nan(test)
 train[train.columns].fillna(-999,inplace = True)
 test[test.columns].fillna(-999,inplace = True)
 
-# divide dataset
-y = train.isFraud
-# feature_cols should contain "TransactionID"?    I think yes. but it shouldn't be.
-feature_cols = [c for c in train.columns if c not in ['isFraud','TransactionID']]
-X = train[feature_cols]
-X_test=test
+train.to_csv("train.csv")
+test.to_csv("test.csv")
 

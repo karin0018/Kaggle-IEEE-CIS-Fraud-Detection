@@ -10,16 +10,11 @@ from sklearn.model_selection import train_test_split, StratifiedKFold,KFold
 from bayes_opt import BayesianOptimization
 import lightgbm as lgb
 import warnings
+import gc
 warnings.filterwarnings("ignore")
 
-train_tr = pd.read_csv('train_transaction.csv')
-test_tr = pd.read_csv('test_transaction.csv')
-train_id = pd.read_csv('train_identity.csv')
-test_id = pd.read_csv('test_identity.csv')
-
-# merge data set
-train = pd.merge(train_tr,train_id, on = 'TransactionID',how = 'left')
-test = pd.merge(test_tr,test_id,on = 'TransactionID',how = 'left')
+train = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
 
 
 # In[ ]:
@@ -172,21 +167,67 @@ param_lgb = {
 # In[ ]:
 
 
-# baseline
-params = {'num_leaves': 256,
-          'min_child_samples': 79,
-          'objective': 'binary',
-          'max_depth': 13,
-          'learning_rate': 0.03,
-          "boosting_type": "gbdt",
-          "subsample_freq": 3,
-          "subsample": 0.9,
-          "bagging_seed": 11,
-          "metric": 'auc',
-          "verbosity": -1,
-          'reg_alpha': 0.3,
-          'reg_lambda': 0.3,
-          'colsample_bytree': 0.9,
-          #'categorical_feature': cat_cols
-         }
+# 5-flods cv
+from sklearn.model_selection import KFold
+import lightgbm as lgb
+
+NFOLDS=5
+
+folds=KFold(n_splits=NFOLDS)
+
+splits = folds.split(X, y) 
+y_preds = np.zeros(X_test.shape[0]) 
+y_oof = np.zeros(X.shape[0])
+score = 0
+
+feature_importances = pd.DataFrame()
+feature_importances['feature'] = features
+model = []
+scoreRecord=[]
+
+for fold_n, (train_index, valid_index) in enumerate(splits):
+    X_train, X_valid = X[columns].iloc[train_index], X[columns].iloc[valid_index]
+    y_train, y_valid = y.iloc[train_index], y.iloc[valid_index]
+
+    dtrain = lgb.Dataset(X_train, label=y_train)
+    dvalid = lgb.Dataset(X_valid, label=y_valid)
+
+    clf = lgb.train(params, dtrain, 10000, valid_sets=[dtrain, dvalid], verbose_eval=200, early_stopping_rounds=500)
+    # get five models
+
+    model.append(clf)
+
+    feature_importances[f'fold_{fold_n + 1}'] = clf.feature_importance()
+
+    y_pred_valid = clf.predict(X_valid)
+    y_oof[valid_index] = y_pred_valid #save prediction
+    print(f"Fold {fold_n + 1} | AUC: {roc_auc_score(y_valid, y_pred_valid)}") # print valid dataset's auc score
+
+    # record the five models score
+
+    scoreRecord.append( roc_auc_score(y_valid, y_pred_valid))
+
+    score += roc_auc_score(y_valid, y_pred_valid) / NFOLDS # get mean score
+    y_preds += clf.predict(X_test) / NFOLDS # get mean prediction
+    
+# plot feature importance
+import seaborn as sns
+
+feature_importances['average'] = feature_importances[[f'fold_{fold_n + 1}' for fold_n in range(folds.n_splits)]].mean(axis=1)
+feature_importances.to_csv('feature_importances.csv')
+
+plt.figure(figsize=(16, 16))
+sns.barplot(data=feature_importances.sort_values(by='average', ascending=False).head(50), x='average', y='feature');
+plt.title('50 TOP feature importance over {} folds average'.format(folds.n_splits));
+
+
+del X_train, X_valid, y_train, y_valid
+gc.collect()
+
+print(f"\nMean AUC = {score}")
+print(f"Out of folds AUC = {roc_auc_score(y, y_oof)}")
+
+sub = pd.DataFrame(index=test.TransactionID)
+sub['isFraud'] = y_preds
+sub.to_csv("submissionLGB.csv")
 
