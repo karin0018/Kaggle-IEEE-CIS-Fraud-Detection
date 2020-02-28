@@ -5,7 +5,7 @@
 
 
 # get some basic imformation
-from scipy import stats
+
 def resumetable(df):
     print(f"Dataset Shape: {df.shape}")
     summary = pd.DataFrame(df.dtypes,columns=['dtypes'])
@@ -22,9 +22,6 @@ def resumetable(df):
 #         summary.loc[summary['Name'] == name, 'Entropy'] = round(stats.entropy(df[name].value_counts(normalize=True), base=2),2) 
 
     return summary
-
-
-# In[ ]:
 
 
 # reduce memory
@@ -60,9 +57,6 @@ def reduce_men_usage(df, verbose=True):
     return df
 
 
-# In[ ]:
-
-
 # remove some outliers
 def CalcOutliers(df_num): 
 
@@ -91,9 +85,6 @@ def CalcOutliers(df_num):
     print("Total percentual of Outliers: ", round((len(outliers_total) / len(outliers_removed) )*100, 4)) # Percentual of outliers in points
     
     return
-
-
-# In[ ]:
 
 
 # PCA for Vxx
@@ -127,7 +118,6 @@ train = PCA_change(train, mas_v, prefix='PCA_V_', n_components=30)
 test =  PCA_change(test, mas_v, prefix='PCA_V_', n_components=30)
 
 
-# In[ ]:
 
 
 # model selection_classification
@@ -279,8 +269,6 @@ def train_model_classification(X, X_test, y, params, folds, model_type='lgb', ev
 result_dict_lgb = train_model_classification(X=X, X_test=X_test, y=y, params=params, folds=folds, model_type='lgb', eval_metric='auc', plot_feature_importance=True,
                                                       verbose=500, early_stopping_rounds=200, n_estimators=5000, averaging='usual', n_jobs=-1)
 
-
-# In[ ]:
 
 
 # model selection_regression
