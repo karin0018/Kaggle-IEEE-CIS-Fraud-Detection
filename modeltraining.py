@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
-
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from sklearn.model_selection import train_test_split, StratifiedKFold,KFold
@@ -15,9 +12,6 @@ warnings.filterwarnings("ignore")
 
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
-
-
-# In[ ]:
 
 
 # Bayesian-optimization
@@ -110,8 +104,6 @@ bounds_LGB = {
 LGB_BO = BayesianOptimization(LGB_bayesian, bounds_LGB, random_state=42)
 
 
-# In[ ]:
-
 
 init_points = 10
 n_iter = 15
@@ -129,15 +121,8 @@ with warnings.catch_warnings():
     LGB_BO.maximize(init_points=init_points, n_iter=n_iter, acq='ucb', xi=0.0, alpha=1e-6)
 
 
-# In[ ]:
-
-
 LGB_BO.max['target']
 LGB_BO.max['params']
-
-
-# In[ ]:
-
 
 param_lgb = {
         'min_data_in_leaf': int(LGB_BO.max['params']['min_data_in_leaf']), 
@@ -162,9 +147,6 @@ param_lgb = {
         'boost_from_average': True,
         'metric':'auc'
     }
-
-
-# In[ ]:
 
 
 # 5-flods cv
