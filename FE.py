@@ -152,9 +152,6 @@ for feature in ['id_01', 'id_31', 'id_33', 'id_35', 'id_36']:
         
 
 
-# In[ ]:
-
-
 train['TransactionAmt_Log'] = np.log(train['TransactionAmt'])
 test['TransactionAmt_Log'] = np.log(test['TransactionAmt'])
 
